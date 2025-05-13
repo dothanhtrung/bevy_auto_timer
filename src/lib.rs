@@ -2,12 +2,12 @@
 
 //! ### bevy_auto_timer
 //!
+//! A convenient timer which ticks automatically.
 
 use bevy::prelude::{
     in_state, App, Commands, Component, Entity, Event, IntoScheduleConfigs, Plugin, Query, Res, States, Time, Timer,
-    Update,
+    TimerMode, Update,
 };
-use bevy::time::TimerMode;
 
 macro_rules! plugin_systems {
     ( ) => {
@@ -15,12 +15,13 @@ macro_rules! plugin_systems {
     };
 }
 
+/// The main plugin
 #[derive(Default)]
 pub struct AutoTimerPlugin<T>
 where
     T: States,
 {
-    /// List of game state that this plugin will run in
+    /// List of game state this plugin will run in
     pub states: Vec<T>,
 }
 
@@ -52,10 +53,19 @@ where
     }
 }
 
+/// Fake state to trick plugin work in any state.
+/// You may not need this.
 #[derive(States, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum DummyState {}
 
 /// Use this if you don't care to state and want this plugin's systems run all the time.
+/// ```rust
+/// use bevy::prelude::App;
+/// use bevy_auto_timer::AutoTimerPluginAnyState;
+/// fn main() {
+///     App::new().add_plugins(AutoTimerPluginAnyState::any());
+/// }
+/// ```
 #[derive(Default)]
 pub struct AutoTimerPluginAnyState;
 
@@ -68,17 +78,22 @@ impl AutoTimerPluginAnyState {
 #[derive(Default)]
 pub enum ActionOnFinish {
     #[default]
+    /// Do nothing
     Nothing,
+    /// Despawn entity
     Despawn,
+    /// Remove `AutoTimer` out of entity
     Remove,
 }
 
+/// Timer component which ticks automatically
 #[derive(Component, Default)]
 pub struct AutoTimer {
     pub timer: Timer,
     pub action_on_finish: ActionOnFinish,
 }
 
+/// Triggered when the timer is finished
 #[derive(Event)]
 pub struct AutoTimerFinished;
 
@@ -90,6 +105,7 @@ impl AutoTimer {
         }
     }
 
+    /// Progress in percentage
     pub fn progress(&self) -> f32 {
         self.timer.elapsed().as_secs_f32() / self.timer.duration().as_secs_f32()
     }
